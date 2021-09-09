@@ -145,6 +145,41 @@ async process(buffers: VideoFrameBuffer[]): Promise<VideoFrameBuffer[]> {
 }
 ```
 
+### Building an overlay processor
+An overlay processor can be a customized processor for loading an external image:
+
+```typescript
+class VideoLoadImageProcessor implements VideoFrameProcessor { 
+  private targetCanvas: HTMLCanvasElement = document.createElement('canvas') as HTMLCanvasElement;
+  private targetCanvasCtx: CanvasRenderingContext2D = this.targetCanvas.getContext('2d') as CanvasRenderingContext2D;
+  private canvasVideoFrameBuffer = new CanvasVideoFrameBuffer(this.targetCanvas);
+
+  private renderWidth: number = 0;
+  private renderHeight: number = 0;
+  private sourceWidth: number = 0;
+  private sourceHeight: number = 0;
+  
+  async function loadImage(url: string, elem: HTMLImageElement): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      elem.onload = (): void => resolve(elem);
+      elem.onerror = reject;
+      elem.src = url;
+      // to configure CORS access for the fetch of the new image if it is not hosted on the same server
+      elem.crossOrigin = "anonymous";
+    });
+  }
+  async process(buffers: VideoFrameBuffer[]): Promise<VideoFrameBuffer[]> {
+    const canvas = buffers[0].asCanvasElement();
+    // copy the frame to the intermediate canvas
+    this.targetCanvasCtx.drawImage(canvas, 0, 0));
+
+    // replace the video frame with the external image one for subsequent processor
+    buffers[0] = this.canvasVideoFrameBuffer;
+    return buffers;
+  }
+}
+```
+
 ## Video Processing Usage
 ### Custom processor usage during meeting
 
