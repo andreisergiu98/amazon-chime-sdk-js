@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-
+- Add PII identification and redaction, partial result stabilization support from Amazon Transcribe and Amazon Transcribe Medical for live transcription.
 ### Removed
 
 ### Fixed
