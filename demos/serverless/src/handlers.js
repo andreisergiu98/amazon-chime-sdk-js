@@ -111,6 +111,7 @@ exports.start_transcription = async (event, context) => {
   const languageCode = event.queryStringParameters.language;
   const region = event.queryStringParameters.region;
   let transcriptionConfiguration = {};
+  const transcriptEntities = JSON.parse(event.queryStringParameters.transcriptEntities);
   if (event.queryStringParameters.engine === 'transcribe') {
     transcriptionConfiguration = {
       EngineTranscribeSettings: {
@@ -119,6 +120,24 @@ exports.start_transcription = async (event, context) => {
     };
     if (region) {
       transcriptionConfiguration.EngineTranscribeSettings.Region = region;
+    }
+    if (transcriptEntities.hasOwnProperty('contentIdentificationType')) {
+      transcriptionConfiguration.EngineTranscribeSettings.ContentIdentificationType = transcriptEntities.contentIdentificationType;
+    }
+    if (transcriptEntities.hasOwnProperty('contentRedactionType')) {
+      transcriptionConfiguration.EngineTranscribeSettings.ContentRedactionType = transcriptEntities.contentRedactionType;
+    }
+    if (transcriptEntities.hasOwnProperty('enablePartialResultsStability')) {
+      transcriptionConfiguration.EngineTranscribeSettings.EnablePartialResultsStabilization = transcriptEntities.enablePartialResultsStability;
+    }
+    if (transcriptEntities.hasOwnProperty('partialStabilityFactor')) {
+      transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptEntities.partialStabilityFactor;
+    }
+    if (transcriptEntities.hasOwnProperty('entityType')) {
+      transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptEntities.entityType;
+    }
+    if (transcriptEntities.hasOwnProperty('languageModel')) {
+      transcriptionConfiguration.EngineTranscribeSettings.LanguageModelName = transcriptEntities.languageModel;
     }
   } else if (event.queryStringParameters.engine === 'transcribe_medical') {
     transcriptionConfiguration = {
@@ -130,6 +149,9 @@ exports.start_transcription = async (event, context) => {
     };
     if (region) {
       transcriptionConfiguration.EngineTranscribeMedicalSettings.Region = region;
+    }
+    if (transcriptEntities.hasOwnProperty('contentIdentificationType')) {
+      transcriptionConfiguration.EngineTranscribeMedicalSettings.ContentIdentificationType = transcriptEntities.contentIdentificationType;
     }
   } else {
     return response(400, 'application/json', JSON.stringify({
