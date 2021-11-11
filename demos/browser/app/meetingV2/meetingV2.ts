@@ -238,7 +238,7 @@ interface TranscriptSegment {
   endTimeMs: number;
 }
 
-interface TranscriptEntityModel {
+interface TranscriptionStreamParams {
   contentIdentificationType?: string;
   contentRedactionType?: string;
   enablePartialResultsStability?: boolean;
@@ -1034,26 +1034,26 @@ export class DemoMeetingApp
       let partialStabilityFactor = '';
       let languageModel = '';
       let isCustomLanguageModelChecked = false;
-      const transcriptEntities:TranscriptEntityModel = {};
+      const transcriptionStreamParams:TranscriptionStreamParams = {};
       if ((document.getElementById('engine-transcribe') as HTMLInputElement).checked) {
         engine = 'transcribe';
         languageCode = (document.getElementById('transcribe-language') as HTMLInputElement).value;
         region = (document.getElementById('transcribe-region') as HTMLInputElement).value;
         contentIdentification = (document.getElementById('content-identification-checkbox') as HTMLInputElement).checked;
         if (contentIdentification) {
-          transcriptEntities.contentIdentificationType = 'PII';
+          transcriptionStreamParams.contentIdentificationType = 'PII';
         }
         contentRedaction = (document.getElementById('content-redaction-checkbox') as HTMLInputElement).checked;
         if (contentRedaction) {
-          transcriptEntities.contentRedactionType = 'PII';
+          transcriptionStreamParams.contentRedactionType = 'PII';
         }
         partialStabilization = (document.getElementById('partial-stabilization-checkbox') as HTMLInputElement).checked;
         if (partialStabilization) {
-          transcriptEntities.enablePartialResultsStability = partialStabilization;
+          transcriptionStreamParams.enablePartialResultsStability = partialStabilization;
         }
         partialStabilityFactor = (document.getElementById('partial-stability') as HTMLInputElement).value;
         if (partialStabilityFactor) {
-          transcriptEntities.partialStabilityFactor = partialStabilityFactor;
+          transcriptionStreamParams.partialStabilityFactor = partialStabilityFactor;
         }
         if (contentIdentification || contentRedaction) {
           const selected = document.querySelectorAll('#transcribe-entity option:checked');
@@ -1065,14 +1065,14 @@ export class DemoMeetingApp
             }
           } 
           if (values !== '') {
-            transcriptEntities.entityType = values;
+            transcriptionStreamParams.entityType = values;
           }
         }
         isCustomLanguageModelChecked = (document.getElementById('custom-language-model-checkbox') as HTMLInputElement).checked;
           if (isCustomLanguageModelChecked) {
             languageModel = (document.getElementById('language-model-input-text') as HTMLInputElement).value;
             if (languageModel) {
-              transcriptEntities.languageModel = languageModel;
+              transcriptionStreamParams.languageModel = languageModel;
           }
         }
       } else if ((document.getElementById('engine-transcribe-medical') as HTMLInputElement).checked) {
@@ -1081,17 +1081,17 @@ export class DemoMeetingApp
         region = (document.getElementById('transcribe-medical-region') as HTMLInputElement).value;
         contentIdentification = (document.getElementById('medical-content-identification-checkbox') as HTMLInputElement).checked;
         if (contentIdentification) {
-          transcriptEntities.contentIdentificationType = "PHI";
+          transcriptionStreamParams.contentIdentificationType = "PHI";
         }
       } else {
         throw new Error('Unknown transcription engine');
       }
-      await startLiveTranscription(engine, languageCode, region, transcriptEntities);
+      await startLiveTranscription(engine, languageCode, region, transcriptionStreamParams);
     });
 
-    const startLiveTranscription = async (engine: string, languageCode: string, region: string, transcriptEntities : TranscriptEntityModel) => {
-      const transcriptEntity = JSON.stringify(transcriptEntities);
-      const response = await fetch(`${DemoMeetingApp.BASE_URL}start_transcription?title=${encodeURIComponent(this.meeting)}&engine=${encodeURIComponent(engine)}&language=${encodeURIComponent(languageCode)}&region=${encodeURIComponent(region)}&transcriptEntities=${encodeURIComponent(transcriptEntity)}`, {
+    const startLiveTranscription = async (engine: string, languageCode: string, region: string, transcriptionStreamParams : TranscriptionStreamParams) => {
+      const transcriptionAdditionalParams = JSON.stringify(transcriptionStreamParams);
+      const response = await fetch(`${DemoMeetingApp.BASE_URL}start_transcription?title=${encodeURIComponent(this.meeting)}&engine=${encodeURIComponent(engine)}&language=${encodeURIComponent(languageCode)}&region=${encodeURIComponent(region)}&transcriptionStreamParams=${encodeURIComponent(transcriptionAdditionalParams)}`, {
         method: 'POST',
       });
       const json = await response.json();

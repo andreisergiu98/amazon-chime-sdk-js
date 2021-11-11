@@ -145,7 +145,7 @@ function serve(host = '127.0.0.1:8080') {
         const languageCode = requestUrl.query.language;
         const region = requestUrl.query.region;
         let transcriptionConfiguration = {};
-        const transcriptEntities = JSON.parse(requestUrl.query.transcriptEntities);
+        const transcriptionStreamParams = JSON.parse(requestUrl.query.transcriptionStreamParams);
         const contentIdentification = requestUrl.query.contentIdentification;
         const entityType = requestUrl.query.entityType;
         if (requestUrl.query.engine === 'transcribe') {
@@ -157,23 +157,23 @@ function serve(host = '127.0.0.1:8080') {
           if (region) {
             transcriptionConfiguration.EngineTranscribeSettings.Region = region;
           }
-          if (transcriptEntities.hasOwnProperty('contentIdentificationType')) {
-            transcriptionConfiguration.EngineTranscribeSettings.ContentIdentificationType = transcriptEntities.contentIdentificationType;
+          if (transcriptionStreamParams.hasOwnProperty('contentIdentificationType')) {
+            transcriptionConfiguration.EngineTranscribeSettings.ContentIdentificationType = transcriptionStreamParams.contentIdentificationType;
           }
-          if (transcriptEntities.hasOwnProperty('contentRedactionType')) {
-            transcriptionConfiguration.EngineTranscribeSettings.ContentRedactionType = transcriptEntities.contentRedactionType;
+          if (transcriptionStreamParams.hasOwnProperty('contentRedactionType')) {
+            transcriptionConfiguration.EngineTranscribeSettings.ContentRedactionType = transcriptionStreamParams.contentRedactionType;
           }
-          if (transcriptEntities.hasOwnProperty('enablePartialResultsStability')) {
-            transcriptionConfiguration.EngineTranscribeSettings.EnablePartialResultsStabilization = transcriptEntities.enablePartialResultsStability;
+          if (transcriptionStreamParams.hasOwnProperty('enablePartialResultsStability')) {
+            transcriptionConfiguration.EngineTranscribeSettings.EnablePartialResultsStabilization = transcriptionStreamParams.enablePartialResultsStability;
           }
-          if (transcriptEntities.hasOwnProperty('partialStabilityFactor')) {
-            transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptEntities.partialStabilityFactor;
+          if (transcriptionStreamParams.hasOwnProperty('partialStabilityFactor')) {
+            transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptionStreamParams.partialStabilityFactor;
           }
-          if (transcriptEntities.hasOwnProperty('entityType')) {
-            transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptEntities.entityType;
+          if (transcriptionStreamParams.hasOwnProperty('entityType')) {
+            transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptionStreamParams.entityType;
           }
-          if (transcriptEntities.hasOwnProperty('languageModel')) {
-            transcriptionConfiguration.EngineTranscribeSettings.LanguageModelName = transcriptEntities.languageModel;
+          if (transcriptionStreamParams.hasOwnProperty('languageModel')) {
+            transcriptionConfiguration.EngineTranscribeSettings.LanguageModelName = transcriptionStreamParams.languageModel;
           }
         } else if (requestUrl.query.engine === 'transcribe_medical') {
           transcriptionConfiguration = {
@@ -186,8 +186,8 @@ function serve(host = '127.0.0.1:8080') {
           if (region) {
             transcriptionConfiguration.EngineTranscribeMedicalSettings.Region = region;
           }
-          if (transcriptEntities.hasOwnProperty('contentIdentificationType')) {
-            transcriptionConfiguration.EngineTranscribeMedicalSettings.ContentIdentificationType = transcriptEntities.contentIdentificationType;
+          if (transcriptionStreamParams.hasOwnProperty('contentIdentificationType')) {
+            transcriptionConfiguration.EngineTranscribeMedicalSettings.ContentIdentificationType = transcriptionStreamParams.contentIdentificationType;
           }
         } else {
           return response(400, 'application/json', JSON.stringify({
