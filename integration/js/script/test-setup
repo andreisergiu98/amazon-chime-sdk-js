@@ -5,7 +5,7 @@ const fs = require('fs');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
 
-const test_config_path = path.join(__dirname, '..', '..', 'configs', 'messaging_session_test.config.json');
+const test_config_path = path.join(__dirname, '..', '..', 'configs', 'integrationTest', 'messaging_session_test.config.json');
 const test_config_file = fs.readFileSync(test_config_path);
 
 const test_config = JSON.parse(test_config_file);
