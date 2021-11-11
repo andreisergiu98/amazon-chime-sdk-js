@@ -269,6 +269,7 @@ export class DemoMeetingApp
   voiceConnectorId: string | null = null;
   sipURI: string | null = null;
   region: string | null = null;
+  controlRegion: string | null = null;
   meetingSession: MeetingSession | null = null;
   priorityBasedDownlinkPolicy: VideoPriorityBasedPolicy | null = null;
   audioVideo: AudioVideoFacade | null = null;
@@ -393,7 +394,6 @@ export class DemoMeetingApp
       this.fatal(new Error('Testing fatal.'));
       return;
     }
-
     (document.getElementById('sdk-version') as HTMLSpanElement).innerText =
       'amazon-chime-sdk-js@' + Versioning.sdkVersion;
     this.initEventListeners();
@@ -439,6 +439,7 @@ export class DemoMeetingApp
 
   initParameters(): void {
     const meeting = new URL(window.location.href).searchParams.get('m');
+    this.controlRegion = new URL(window.location.href).searchParams.get('controlRegion');
     if (meeting) {
       (document.getElementById('inputMeeting') as HTMLInputElement).value = meeting;
       (document.getElementById('inputName') as HTMLInputElement).focus();
@@ -1992,7 +1993,7 @@ export class DemoMeetingApp
     const response = await fetch(
       `${DemoMeetingApp.BASE_URL}join?title=${encodeURIComponent(
         this.meeting
-      )}&name=${encodeURIComponent(this.name)}&region=${encodeURIComponent(this.region)}`,
+      )}&name=${encodeURIComponent(this.name)}&region=${encodeURIComponent(this.region)}&controlRegion=${encodeURIComponent(this.controlRegion)}`,
       {
         method: 'POST',
       }

@@ -22,8 +22,10 @@ const indexPage = fs.readFileSync(indexPagePath);
 // Create ans AWS SDK Chime object. Region 'us-east-1' is currently required.
 // Use the MediaRegion property below in CreateMeeting to select the region
 // the meeting is hosted in.
-const chime = new AWS.Chime({ region: 'us-east-1' });
-const sts = new AWS.STS({ region: 'us-east-1' })
+const currentRegion = 'us-east-1';
+const chime = new AWS.Chime({ region: currentRegion });
+const sts = new AWS.STS({ region: currentRegion });
+let chimeMeetings = null;
 
 // Set the AWS SDK Chime endpoint. The global endpoint is https://service.chime.aws.amazon.com.
 const endpoint = process.env.ENDPOINT || 'https://service.chime.aws.amazon.com';
@@ -57,9 +59,12 @@ function serve(host = '127.0.0.1:8080') {
           throw new Error('Need parameters: title, name, region');
         }
 
+        let controlRegion = (!!requestUrl.query.controlRegion) ? currentRegion : requestUrl.query.controlRegion;
+        chimeMeetings = new AWS.ChimeSDKMeetings({ region: controlRegion});
+
         // Look up the meeting by its title. If it does not exist, create the meeting.
         if (!meetingTable[requestUrl.query.title]) {
-          meetingTable[requestUrl.query.title] = await chime.createMeeting({
+          meetingTable[requestUrl.query.title] = await chimeMeetings.createMeeting({
             // Use a UUID for the client request token to ensure that any request retries
             // do not create multiple meetings.
             ClientRequestToken: uuidv4(),
@@ -76,7 +81,7 @@ function serve(host = '127.0.0.1:8080') {
         const meeting = meetingTable[requestUrl.query.title];
 
         // Create new attendee for the meeting
-        const attendee = await chime.createAttendee({
+        const attendee = await chimeMeetings.createAttendee({
           // The meeting ID of the created meeting to add the attendee to
           MeetingId: meeting.Meeting.MeetingId,
 
@@ -97,7 +102,7 @@ function serve(host = '127.0.0.1:8080') {
         }, null, 2));
       } else if (request.method === 'POST' && requestUrl.pathname === '/end') {
         // End the meeting. All attendee connections will hang up.
-        await chime.deleteMeeting({
+        await chimeMeetings.deleteMeeting({
           MeetingId: meetingTable[requestUrl.query.title].Meeting.MeetingId,
         }).promise();
         respond(response, 200, 'application/json', JSON.stringify({}));
@@ -137,7 +142,7 @@ function serve(host = '127.0.0.1:8080') {
         respond(response, 200, 'application/json', JSON.stringify(awsCredentials), true);
       } else if (request.method === 'POST' && requestUrl.pathname === '/end') {
         // End the meeting. All attendee connections will hang up.
-        await chime.deleteMeeting({
+        await chimeMeetings.deleteMeeting({
           MeetingId: meetingTable[requestUrl.query.title].Meeting.MeetingId,
         }).promise();
         respond(response, 200, 'application/json', JSON.stringify({}));
@@ -171,13 +176,13 @@ function serve(host = '127.0.0.1:8080') {
           }));
         }
 
-        await chime.startMeetingTranscription({
+        await chimeMeetings.startMeetingTranscription({
           MeetingId: meetingTable[requestUrl.query.title].Meeting.MeetingId,
           TranscriptionConfiguration: transcriptionConfiguration
         }).promise();
         respond(response, 200, 'application/json', JSON.stringify({}));
       } else if (request.method === 'POST' && requestUrl.pathname === '/stop_transcription') {
-        await chime.stopMeetingTranscription({
+        await chimeMeetings.stopMeetingTranscription({
           MeetingId: meetingTable[requestUrl.query.title].Meeting.MeetingId
         }).promise();
         respond(response, 200, 'application/json', JSON.stringify({}));

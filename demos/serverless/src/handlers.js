@@ -12,7 +12,9 @@ const ddb = new AWS.DynamoDB();
 // Create an AWS SDK Chime object. Region 'us-east-1' is currently required.
 // Use the MediaRegion property below in CreateMeeting to select the region
 // the meeting is hosted in.
-const chime = new AWS.Chime({ region: 'us-east-1' });
+const currentRegion = 'us-east-1';
+const chime = new AWS.Chime({ region: currentRegion});
+let chimeMeetings = null;
 
 // Set the AWS SDK Chime endpoint. The global endpoint is https://service.chime.aws.amazon.com.
 chime.endpoint = new AWS.Endpoint(process.env.CHIME_ENDPOINT);
@@ -38,10 +40,15 @@ exports.index = async (event, context, callback) => {
 
 exports.join = async(event, context) => {
   const query = event.queryStringParameters;
+
   if (!query.title || !query.name || !query.region) {
     return response(400, 'application/json', JSON.stringify({error: 'Need parameters: title, name, region'}));
   }
 
+  let controlRegion = (!!query.controlRegion) ? currentRegion : query.controlRegion;
+  chimeMeetings = new AWS.ChimeSDKMeetings({ region: controlRegion});
+    
+  
   // Look up the meeting by its title. If it does not exist, create the meeting.
   let meeting = await getMeeting(query.title);
   if (!meeting) {
@@ -62,12 +69,12 @@ exports.join = async(event, context) => {
       ExternalMeetingId: query.title.substring(0, 64),
 
       // Tags associated with the meeting. They can be used in cost allocation console
-      Tags: [
-        { Key: 'Department', Value: 'RND'}
-      ]
+      // Tags: [
+      //   { Key: 'Department', Value: 'RND'}
+      // ]
     };
     console.info('Creating new meeting: ' + JSON.stringify(request));
-    meeting = await chime.createMeeting(request).promise();
+    meeting = await chimeMeetings.createMeeting(request).promise();
 
     // Store the meeting in the table using the meeting title as the key.
     await putMeeting(query.title, meeting);
@@ -75,7 +82,7 @@ exports.join = async(event, context) => {
 
   // Create new attendee for the meeting
   console.info('Adding new attendee');
-  const attendee = (await chime.createAttendee({
+  const attendee = (await chimeMeetings.createAttendee({
     // The meeting ID of the created meeting to add the attendee to
     MeetingId: meeting.Meeting.MeetingId,
 
@@ -101,7 +108,7 @@ exports.end = async (event, context) => {
   const meeting = await getMeeting(event.queryStringParameters.title);
 
   // End the meeting. All attendee connections will hang up.
-  await chime.deleteMeeting({ MeetingId: meeting.Meeting.MeetingId }).promise();
+  await chimeMeetings.deleteMeeting({ MeetingId: meeting.Meeting.MeetingId }).promise();
   return response(200, 'application/json', JSON.stringify({}));
 };
 
@@ -138,7 +145,7 @@ exports.start_transcription = async (event, context) => {
   }
 
   // start transcription for the meeting
-  await chime.startMeetingTranscription({
+  await chimeMeetings.startMeetingTranscription({
     MeetingId: meeting.Meeting.MeetingId,
     TranscriptionConfiguration: transcriptionConfiguration
   }).promise();
@@ -150,7 +157,7 @@ exports.stop_transcription = async (event, context) => {
   const meeting = await getMeeting(event.queryStringParameters.title);
 
   // stop transcription for the meeting
-  await chime.stopMeetingTranscription({
+  await chimeMeetings.stopMeetingTranscription({
     MeetingId: meeting.Meeting.MeetingId
   }).promise();
   return response(200, 'application/json', JSON.stringify({}));
