@@ -1993,6 +1993,7 @@ export class DemoMeetingApp
 
     const speakerToTranscriptSpanMap = new Map<string, HTMLSpanElement>();
     for (const segment of partialTranscriptSegments) {
+      console.log("segment from loop", segment);
       const newSpeakerId = segment.attendee.attendeeId;
       if (!speakerToTranscriptSpanMap.has(newSpeakerId)) {
         this.appendNewSpeakerTranscriptDiv(segment, speakerToTranscriptSpanMap);
