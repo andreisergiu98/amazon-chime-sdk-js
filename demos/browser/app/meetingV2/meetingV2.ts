@@ -232,7 +232,7 @@ interface Toggle {
 }
 
 interface TranscriptSegment {
-  content: string;
+  contentSpan: HTMLSpanElement,
   attendee: Attendee;
   startTimeMs: number;
   endTimeMs: number;
@@ -1992,6 +1992,7 @@ export class DemoMeetingApp
 
     const speakerToTranscriptSpanMap = new Map<string, HTMLSpanElement>();
     for (const segment of partialTranscriptSegments) {
+      console.log("segment from loop", segment);
       const newSpeakerId = segment.attendee.attendeeId;
       if (!speakerToTranscriptSpanMap.has(newSpeakerId)) {
         this.appendNewSpeakerTranscriptDiv(segment, speakerToTranscriptSpanMap);
@@ -2003,7 +2004,8 @@ export class DemoMeetingApp
           this.appendNewSpeakerTranscriptDiv(segment, speakerToTranscriptSpanMap);
         } else {
           const transcriptSpan = speakerToTranscriptSpanMap.get(newSpeakerId);
-          transcriptSpan.innerHTML = transcriptSpan.innerHTML + '\u00a0' + segment.content;
+          transcriptSpan.innerText = transcriptSpan.innerText + '\u00a0';
+          transcriptSpan.appendChild(segment.contentSpan);
         }
       }
     }
@@ -2011,37 +2013,40 @@ export class DemoMeetingApp
 
   populatePartialTranscriptSegmentsFromResult = (segments: TranscriptSegment[], result: TranscriptResult) => {
     let startTimeMs: number = null;
-    let content = '';
     let attendee: Attendee = null;
+    let contentSpan;
     for (const item of result.alternatives[0].items) {
-      let transcriptWord = item.content;
+      const itemContentSpan = document.createElement('span') as HTMLSpanElement;
+      itemContentSpan.innerText = item.content;
+      itemContentSpan.classList.add('transcript-content');
       if (item.hasOwnProperty('confidence') && !item.content.startsWith("[") && item.confidence < 0.5) {
-        item.content = `<span class='confidence-style'>${item.content}</span>`;
+        itemContentSpan.classList.add('confidence-style');
       }
-      if (this.transcriptEntitySet.size > 0 && this.transcriptEntitySet.has(transcriptWord)) {
-        item.content = `<span class='entity-color'>${item.content}</span>`;
+      if (this.transcriptEntitySet.size > 0 && this.transcriptEntitySet.has(item.content)) {
+        itemContentSpan.classList.add('entity-color');
       }
 
       if (!startTimeMs) {
-        content = item.content;
+        contentSpan = document.createElement('span') as HTMLSpanElement;
+        contentSpan.appendChild(itemContentSpan);
         attendee = item.attendee;
         startTimeMs = item.startTimeMs;
       } else if (item.type === TranscriptItemType.PUNCTUATION) {
-        content = content + item.content;
+        contentSpan.appendChild(itemContentSpan);
         segments.push({
-          content: content,
+          contentSpan: contentSpan,
           attendee: attendee,
           startTimeMs: startTimeMs,
           endTimeMs: item.endTimeMs
         });
-        content = '';
         startTimeMs = null;
         attendee = null;
       } else {
         if (this.noWordSeparatorForTranscription) {
-          content = content + item.content;
+          contentSpan.appendChild(itemContentSpan);
         } else {
-          content = content + ' ' + item.content;
+          itemContentSpan.innerText = ' ' + itemContentSpan.innerText
+          contentSpan.appendChild(itemContentSpan);
         }
       }
     }
@@ -2049,7 +2054,7 @@ export class DemoMeetingApp
     // Reached end of the result but there is no closing punctuation
     if (startTimeMs) {
       segments.push({
-        content: content,
+        contentSpan: contentSpan,
         attendee: attendee,
         startTimeMs: startTimeMs,
         endTimeMs: result.endTimeMs,
@@ -2069,14 +2074,11 @@ export class DemoMeetingApp
     speakerSpan.innerText = segment.attendee.externalUserId.split('#').slice(-1)[0] + ': ';
     speakerTranscriptDiv.appendChild(speakerSpan);
 
-    const transcriptSpan = document.createElement('span') as HTMLSpanElement;
-    transcriptSpan.classList.add('transcript-content');
-    transcriptSpan.innerHTML = segment.content;
-    speakerTranscriptDiv.appendChild(transcriptSpan);
+    speakerTranscriptDiv.appendChild(segment.contentSpan);
 
     this.partialTranscriptDiv.appendChild(speakerTranscriptDiv);
 
-    speakerToTranscriptSpanMap.set(segment.attendee.attendeeId, transcriptSpan);
+    speakerToTranscriptSpanMap.set(segment.attendee.attendeeId, segment.contentSpan);
   };
 
   appendStatusDiv = (status: TranscriptionStatus) => {
