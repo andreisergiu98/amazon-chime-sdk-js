@@ -1028,30 +1028,24 @@ export class DemoMeetingApp
       let engine = '';
       let languageCode = '';
       let region = '';
-      let contentIdentification = false;
-      let contentRedaction = false;
-      let partialStabilization = false;
-      let partialStabilityFactor = '';
-      let languageModel = '';
-      let isCustomLanguageModelChecked = false;
       const transcriptionStreamParams:TranscriptionStreamParams = {};
       if ((document.getElementById('engine-transcribe') as HTMLInputElement).checked) {
         engine = 'transcribe';
         languageCode = (document.getElementById('transcribe-language') as HTMLInputElement).value;
         region = (document.getElementById('transcribe-region') as HTMLInputElement).value;
-        contentIdentification = (document.getElementById('content-identification-checkbox') as HTMLInputElement).checked;
+        let contentIdentification = (document.getElementById('content-identification-checkbox') as HTMLInputElement).checked;
         if (contentIdentification) {
           transcriptionStreamParams.contentIdentificationType = 'PII';
         }
-        contentRedaction = (document.getElementById('content-redaction-checkbox') as HTMLInputElement).checked;
+        let contentRedaction = (document.getElementById('content-redaction-checkbox') as HTMLInputElement).checked;
         if (contentRedaction) {
           transcriptionStreamParams.contentRedactionType = 'PII';
         }
-        partialStabilization = (document.getElementById('partial-stabilization-checkbox') as HTMLInputElement).checked;
+        let partialStabilization = (document.getElementById('partial-stabilization-checkbox') as HTMLInputElement).checked;
         if (partialStabilization) {
           transcriptionStreamParams.enablePartialResultsStability = partialStabilization;
         }
-        partialStabilityFactor = (document.getElementById('partial-stability') as HTMLInputElement).value;
+        let partialStabilityFactor = (document.getElementById('partial-stability') as HTMLInputElement).value;
         if (partialStabilityFactor) {
           transcriptionStreamParams.partialStabilityFactor = partialStabilityFactor;
         }
@@ -1068,9 +1062,9 @@ export class DemoMeetingApp
             transcriptionStreamParams.entityType = values;
           }
         }
-        isCustomLanguageModelChecked = (document.getElementById('custom-language-model-checkbox') as HTMLInputElement).checked;
+        let isCustomLanguageModelChecked = (document.getElementById('custom-language-model-checkbox') as HTMLInputElement).checked;
           if (isCustomLanguageModelChecked) {
-            languageModel = (document.getElementById('language-model-input-text') as HTMLInputElement).value;
+            let languageModel = (document.getElementById('language-model-input-text') as HTMLInputElement).value;
             if (languageModel) {
               transcriptionStreamParams.languageModel = languageModel;
           }
@@ -1079,7 +1073,7 @@ export class DemoMeetingApp
         engine = 'transcribe_medical';
         languageCode = (document.getElementById('transcribe-medical-language') as HTMLInputElement).value;
         region = (document.getElementById('transcribe-medical-region') as HTMLInputElement).value;
-        contentIdentification = (document.getElementById('medical-content-identification-checkbox') as HTMLInputElement).checked;
+        let contentIdentification = (document.getElementById('medical-content-identification-checkbox') as HTMLInputElement).checked;
         if (contentIdentification) {
           transcriptionStreamParams.contentIdentificationType = "PHI";
         }
