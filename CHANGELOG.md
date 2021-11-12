@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix priority downlink policy bandwidth estimation metrics to work with Safari.
+- Make `tileWillBePausedByDownlinkPolicy` observer update synchronous without `setTimeout`.
 
 ### Changed
 
