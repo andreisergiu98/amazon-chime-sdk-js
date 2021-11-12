@@ -483,7 +483,7 @@ export default class DefaultSDP implements SDP {
 
   removeH264SupportFromSendSection(): DefaultSDP {
     const srcSDP: string = this.sdp;
-    console.log("before");
+    console.log('before');
     console.log(srcSDP);
     const sections = DefaultSDP.splitSections(srcSDP);
     const cameraLineIndex: number = DefaultSDP.findActiveCameraSection(sections);
@@ -492,14 +492,14 @@ export default class DefaultSDP implements SDP {
     }
     const cameraSection = sections[cameraLineIndex];
     const cameraSectionLines = DefaultSDP.splitLines(cameraSection);
-    let payloadTypesForH264: number[] = [];
-    let primaryPayloadTypeToFeedbackPayloadTypes: Map<number, number[]> = new Map();
+    const payloadTypesForH264: number[] = [];
+    const primaryPayloadTypeToFeedbackPayloadTypes: Map<number, number[]> = new Map();
     cameraSectionLines.forEach(attribute => {
       if (/^a=rtpmap:/.test(attribute)) {
         const payloadMatch = /^a=rtpmap:([0-9]+)\s/.exec(attribute);
         if (payloadMatch && attribute.toLowerCase().includes('h264')) {
           payloadTypesForH264.push(parseInt(payloadMatch[1], 10));
-          console.log(`found one ${payloadTypesForH264}`)
+          console.log(`found one ${payloadTypesForH264}`);
         }
       }
 
@@ -509,7 +509,9 @@ export default class DefaultSDP implements SDP {
           const feedbackPayloadType = parseInt(feedbackMatches[1], 10);
           const primaryPayloadType = parseInt(feedbackMatches[2], 10);
           if (primaryPayloadTypeToFeedbackPayloadTypes.has(primaryPayloadType)) {
-            primaryPayloadTypeToFeedbackPayloadTypes.get(primaryPayloadType)?.push(feedbackPayloadType);
+            primaryPayloadTypeToFeedbackPayloadTypes
+              .get(primaryPayloadType)
+              ?.push(feedbackPayloadType);
           } else {
             primaryPayloadTypeToFeedbackPayloadTypes.set(primaryPayloadType, [feedbackPayloadType]);
           }
@@ -517,7 +519,7 @@ export default class DefaultSDP implements SDP {
       }
     });
 
-    const payloadTypesToRemove: Set<Number> = new Set()
+    const payloadTypesToRemove: Set<Number> = new Set();
     for (const type of payloadTypesForH264) {
       payloadTypesToRemove.add(type);
 
@@ -531,11 +533,13 @@ export default class DefaultSDP implements SDP {
     // m=video 9 UDP/+++ <payload> <payload> <payload>
     if (payloadTypesForH264.length > 0) {
       const mline = cameraSectionLines[0].split(' ');
-      cameraSectionLines[0] = mline.filter((text: string) => !payloadTypesToRemove.has(parseInt(text))).join(' ');
+      cameraSectionLines[0] = mline
+        .filter((text: string) => !payloadTypesToRemove.has(parseInt(text)))
+        .join(' ');
     }
 
     const filteredLines = cameraSectionLines.filter((line: string) => {
-      if (!line.includes("rtpmap") && !line.includes("rtcp-fb") && !line.includes("fmtp")) {
+      if (!line.includes('rtpmap') && !line.includes('rtcp-fb') && !line.includes('fmtp')) {
         return true;
       }
       for (const type of payloadTypesToRemove) {
@@ -549,7 +553,7 @@ export default class DefaultSDP implements SDP {
     sections[cameraLineIndex] = filteredLines.join(DefaultSDP.CRLF) + DefaultSDP.CRLF;
 
     const newSDP = sections.join('');
-    console.log("after");
+    console.log('after');
     console.log(newSDP);
     return new DefaultSDP(newSDP);
   }
