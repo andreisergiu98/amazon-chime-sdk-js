@@ -989,6 +989,8 @@ export class DemoMeetingApp
     document.getElementsByName('transcription-engine').forEach(e => {
       e.addEventListener('change', () => {
         const engineTranscribeChecked = (document.getElementById('engine-transcribe') as HTMLInputElement).checked;
+        const contentIdentificationChecked = (document.getElementById('content-identification-checkbox') as HTMLInputElement).checked;
+        const contentRedactionChecked = (document.getElementById('content-redaction-checkbox') as HTMLInputElement).checked;
         document.getElementById('engine-transcribe-language').classList.toggle('hidden', !engineTranscribeChecked);
 		    document.getElementById('engine-transcribe-medical-language').classList.toggle('hidden', engineTranscribeChecked);
         document.getElementById('engine-transcribe-region').classList.toggle('hidden', !engineTranscribeChecked);
@@ -998,6 +1000,12 @@ export class DemoMeetingApp
         document.getElementById('engine-transcribe-redaction').classList.toggle('hidden', !engineTranscribeChecked);
         document.getElementById('engine-transcribe-partial-stabilization').classList.toggle('hidden', !engineTranscribeChecked);
         document.getElementById('engine-transcribe-custom-language-model').classList.toggle('hidden', !engineTranscribeChecked);
+        if (!engineTranscribeChecked) {
+          document.getElementById('transcribe-entity-types').classList.toggle('hidden', true);
+        }
+        else if(engineTranscribeChecked && (contentIdentificationChecked || contentRedactionChecked)) {
+          document.getElementById('transcribe-entity-types').classList.toggle('hidden', false);
+        }
       });
     });
 
@@ -1986,7 +1994,6 @@ export class DemoMeetingApp
 
     const speakerToTranscriptSpanMap = new Map<string, HTMLSpanElement>();
     for (const segment of partialTranscriptSegments) {
-      console.log("segment from loop", segment);
       const newSpeakerId = segment.attendee.attendeeId;
       if (!speakerToTranscriptSpanMap.has(newSpeakerId)) {
         this.appendNewSpeakerTranscriptDiv(segment, speakerToTranscriptSpanMap);
