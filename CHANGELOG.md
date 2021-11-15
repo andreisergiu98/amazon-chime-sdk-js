@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+
+### Removed
+
+### Fixed
+
+- Fix priority downlink policy bandwidth estimation metrics to work with Safari.
+
+### Changed
+
+## [2.21.1] - 2021-11-09
 
 ### Added
 
@@ -23,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change the serverless demo's `deploy.js` script to rebuild the demo on each run. This should remove a manual step of rebuilding the demo.
 - Disable NScale resolution scaling for Android device due to Android H.264 encoding.
 - Minor clean up of code in `BackgroundBlurProcessorProvided` class.
+- Refactored some video demo components into classes and seperate files.
 
 ## [2.21.0] - 2021-11-01
 
