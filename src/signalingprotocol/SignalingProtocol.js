@@ -11048,3 +11048,5 @@ $root.SdkVideoSubscriptionConfiguration = (function() {
 })();
 
 module.exports = $root;
+$util.Long = undefined;
+$protobuf.configure();

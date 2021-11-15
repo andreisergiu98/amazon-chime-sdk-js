@@ -148,7 +148,6 @@ describe('TranscriptEvent', () => {
       assert.fail();
       return;
     }
-
     expect(actualEvents[0].results.length).to.equal(1);
     expect(actualEvents[0].results[0].alternatives.length).to.equal(1);
     expect(actualEvents[0].results[0].alternatives[0].transcript).to.eql('Test.');
@@ -258,6 +257,8 @@ describe('TranscriptEvent', () => {
     expect(actualEvents[0].results[0].alternatives[0].entities[0].content).to.eql(
       'Content is a PII data'
     );
+    expect(actualEvents[0].results[0].alternatives[0].entities[0].startTimeMs).eql(1234);
+    expect(actualEvents[0].results[0].alternatives[0].entities[0].endTimeMs).eql(12345);
     expect(actualEvents[0].results[0].alternatives[0].entities[0].type).to.eql('Address');
     expect(actualEvents[0].results[0].alternatives[0].entities[1].type).to.be.undefined;
     expect(actualEvents[0].results[0].alternatives[0].entities[1].confidence).to.eql(0);

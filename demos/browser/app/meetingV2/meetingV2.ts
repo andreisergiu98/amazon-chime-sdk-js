@@ -239,8 +239,8 @@ interface TranscriptSegment {
 }
 
 interface TranscriptionStreamParams {
-  contentIdentificationType?: string;
-  contentRedactionType?: string;
+  contentIdentificationType?: 'PII' | 'PHI';
+  contentRedactionType?: 'PII';
   enablePartialResultsStability?: boolean;
   partialStabilityFactor?: string;
   entityType?: string;
@@ -1002,8 +1002,7 @@ export class DemoMeetingApp
         document.getElementById('engine-transcribe-custom-language-model').classList.toggle('hidden', !engineTranscribeChecked);
         if (!engineTranscribeChecked) {
           document.getElementById('transcribe-entity-types').classList.toggle('hidden', true);
-        }
-        else if(engineTranscribeChecked && (contentIdentificationChecked || contentRedactionChecked)) {
+        } else if (engineTranscribeChecked && (contentIdentificationChecked || contentRedactionChecked)) {
           document.getElementById('transcribe-entity-types').classList.toggle('hidden', false);
         }
       });
@@ -1041,55 +1040,56 @@ export class DemoMeetingApp
         engine = 'transcribe';
         languageCode = (document.getElementById('transcribe-language') as HTMLInputElement).value;
         region = (document.getElementById('transcribe-region') as HTMLInputElement).value;
-        let contentIdentification = (document.getElementById('content-identification-checkbox') as HTMLInputElement).checked;
-        if (contentIdentification) {
+
+        if (isChecked('content-identification-checkbox')) {
           transcriptionStreamParams.contentIdentificationType = 'PII';
         }
-        let contentRedaction = (document.getElementById('content-redaction-checkbox') as HTMLInputElement).checked;
-        if (contentRedaction) {
+        
+        if (isChecked('content-redaction-checkbox')) {
           transcriptionStreamParams.contentRedactionType = 'PII';
         }
-        let partialStabilization = (document.getElementById('partial-stabilization-checkbox') as HTMLInputElement).checked;
-        if (partialStabilization) {
-          transcriptionStreamParams.enablePartialResultsStability = partialStabilization;
+        
+        if (isChecked('partial-stabilization-checkbox')) {
+          transcriptionStreamParams.enablePartialResultsStability = true;
         }
+        
         let partialStabilityFactor = (document.getElementById('partial-stability') as HTMLInputElement).value;
         if (partialStabilityFactor) {
           transcriptionStreamParams.partialStabilityFactor = partialStabilityFactor;
         }
-        if (contentIdentification || contentRedaction) {
+        if (isChecked('content-identification-checkbox') || isChecked('content-redaction-checkbox')) {
           const selected = document.querySelectorAll('#transcribe-entity option:checked');
           let values = '';
           if (selected.length > 0) {
-            values = Array.from(selected).map(el => (el as HTMLInputElement).value).join(',');
-            if (values.startsWith(',')) {
-              values = values.substr(1);
-            }
+            values = Array.from(selected).filter(node => (node as HTMLInputElement).value !== '').map(el => (el as HTMLInputElement).value).join(',');
           } 
           if (values !== '') {
             transcriptionStreamParams.entityType = values;
           }
         }
-        let isCustomLanguageModelChecked = (document.getElementById('custom-language-model-checkbox') as HTMLInputElement).checked;
-          if (isCustomLanguageModelChecked) {
-            let languageModel = (document.getElementById('language-model-input-text') as HTMLInputElement).value;
+
+        if (isChecked('custom-language-model-checkbox')) {
+          let languageModel = (document.getElementById('language-model-input-text') as HTMLInputElement).value;
             if (languageModel) {
               transcriptionStreamParams.languageModel = languageModel;
-          }
+            }
         }
       } else if ((document.getElementById('engine-transcribe-medical') as HTMLInputElement).checked) {
         engine = 'transcribe_medical';
         languageCode = (document.getElementById('transcribe-medical-language') as HTMLInputElement).value;
         region = (document.getElementById('transcribe-medical-region') as HTMLInputElement).value;
-        let contentIdentification = (document.getElementById('medical-content-identification-checkbox') as HTMLInputElement).checked;
-        if (contentIdentification) {
-          transcriptionStreamParams.contentIdentificationType = "PHI";
+        if (isChecked('medical-content-identification-checkbox')) {
+          transcriptionStreamParams.contentIdentificationType = 'PHI';
         }
       } else {
         throw new Error('Unknown transcription engine');
       }
       await startLiveTranscription(engine, languageCode, region, transcriptionStreamParams);
     });
+
+    function isChecked(id: string): boolean {
+      return (document.getElementById(id) as HTMLInputElement).checked;
+    }
 
     const startLiveTranscription = async (engine: string, languageCode: string, region: string, transcriptionStreamParams : TranscriptionStreamParams) => {
       const transcriptionAdditionalParams = JSON.stringify(transcriptionStreamParams);
@@ -1100,7 +1100,6 @@ export class DemoMeetingApp
       if (json.error) {
         throw new Error(`Server error: ${json.error}`);
       }
-
       document.getElementById('live-transcription-modal').style.display = 'none';
     };
 
@@ -1913,7 +1912,7 @@ export class DemoMeetingApp
         if (languageCode && LANGUAGES_NO_WORD_SEPARATOR.has(languageCode)) {
           this.noWordSeparatorForTranscription = true;
         }
-      } else if (transcriptEvent.type === TranscriptionStatusType.STOPPED && this.enableLiveTranscription) {
+      } else if ((transcriptEvent.type === TranscriptionStatusType.STOPPED || transcriptEvent.type === TranscriptionStatusType.FAILED) && this.enableLiveTranscription) {
         // When we receive a STOPPED status event:
         // 1. toggle enabled 'Live Transcription' button to disabled
         this.enableLiveTranscription = false;
@@ -1931,13 +1930,13 @@ export class DemoMeetingApp
         const isPartial = result.isPartial;
         if (!isPartial) {
           if (result.alternatives[0].entities?.length > 0) {
-              for (const entity of result.alternatives[0].entities) {
-                //split the entity based on space
-                let contentArray = entity.content.split(" ");
-                for (const content of contentArray) {
-                  this.transcriptEntitySet.add(content);
-                }
+            for (const entity of result.alternatives[0].entities) {
+              //split the entity based on space
+              let contentArray = entity.content.split(' ');
+              for (const content of contentArray) {
+                this.transcriptEntitySet.add(content);
               }
+            }
           }
         }
         this.partialTranscriptResultMap.set(resultId, result);
@@ -2020,9 +2019,12 @@ export class DemoMeetingApp
       const itemContentSpan = document.createElement('span') as HTMLSpanElement;
       itemContentSpan.innerText = item.content;
       itemContentSpan.classList.add('transcript-content');
-      if (item.hasOwnProperty('confidence') && !item.content.startsWith("[") && item.confidence < 0.5) {
+      // underline the word with red to show confidence level of predicted word being less than 0.3
+      if (item.hasOwnProperty('confidence') && !item.content.startsWith("[") && item.confidence < 0.3) {
         itemContentSpan.classList.add('confidence-style');
       }
+
+      // highlight the word in green to show the predicted word is a PII/PHI entity
       if (this.transcriptEntitySet.size > 0 && this.transcriptEntitySet.has(item.content)) {
         itemContentSpan.classList.add('entity-color');
       }
