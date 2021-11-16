@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-const ChimeMeetingsWrapper = require('./ChimeMeetingsWrapper.js');
+const ChimeMeetings = require('./ChimeMeetings.js');
 const AWS = require('aws-sdk');
 const compression = require('compression');
 const fs = require('fs');
@@ -29,9 +29,9 @@ const sts = new AWS.STS({ region: currentRegion });
 // Set the AWS SDK Chime endpoint. The global endpoint is https://service.chime.aws.amazon.com.
 const endpoint = process.env.ENDPOINT || 'https://service.chime.aws.amazon.com';
 
-//Set useGlobalEndpoint to true to use global endpoint
+//Set useChimeGlobal to true to use global endpoint
 //Setting it false will use regional Chime Meetings Endpoints based upon region.
-const useGlobalEndpoint = false;
+const useChimeGlobal = false;
 
 
 const captureS3Destination = process.env.CAPTURE_S3_DESTINATION;
@@ -49,7 +49,7 @@ function serve(host = '127.0.0.1:8080') {
       // Enable HTTP compression
       compression({})(request, response, () => {});
       const requestUrl = url.parse(request.url, true);
-      let chimeMeetingsWrapper = new ChimeMeetingsWrapper(currentRegion, requestUrl.query.controlRegion, endpoint);
+      let chimeMeetings= new ChimeMeetings(currentRegion, requestUrl.query.controlRegion, endpoint, useChimeGlobal);
       if (request.method === 'GET' && requestUrl.pathname === '/') {
         // Return the contents of the index page
         respond(response, 200, 'text/html', indexPage);
@@ -63,7 +63,7 @@ function serve(host = '127.0.0.1:8080') {
 
         // Look up the meeting by its title. If it does not exist, create the meeting.
         if (!meetingTable[requestUrl.query.title]) {
-          meetingTable[requestUrl.query.title] = await chimeMeetingsWrapper.createMeeting(useGlobalEndpoint, {
+          meetingTable[requestUrl.query.title] = await chimeMeetings.createMeeting({
             // Use a UUID for the client request token to ensure that any request retries
             // do not create multiple meetings.
             ClientRequestToken: uuidv4(),
@@ -80,7 +80,7 @@ function serve(host = '127.0.0.1:8080') {
         const meeting = meetingTable[requestUrl.query.title];
 
         // Create new attendee for the meeting
-          const attendee = await chimeMeetingsWrapper.createAttendee(useGlobalEndpoint,{
+          const attendee = await chimeMeetings.createAttendee({
           // The meeting ID of the created meeting to add the attendee to
           MeetingId: meeting.Meeting.MeetingId,
 
@@ -101,7 +101,7 @@ function serve(host = '127.0.0.1:8080') {
         }, null, 2));
       } else if (request.method === 'POST' && requestUrl.pathname === '/end') {
         // End the meeting. All attendee connections will hang up.
-        await chimeMeetingsWrapper.deleteMeeting(useGlobalEndpoint,{
+        await chimeMeetings.deleteMeeting({
           MeetingId: meetingTable[requestUrl.query.title].Meeting.MeetingId,
         }).promise();
         respond(response, 200, 'application/json', JSON.stringify({}));
@@ -141,7 +141,7 @@ function serve(host = '127.0.0.1:8080') {
         respond(response, 200, 'application/json', JSON.stringify(awsCredentials), true);
       } else if (request.method === 'POST' && requestUrl.pathname === '/end') {
         // End the meeting. All attendee connections will hang up.
-        await chimeMeetingsWrapper.deleteMeeting(useGlobalEndpoint,{
+        await chimeMeetings.deleteMeeting({
           MeetingId: meetingTable[requestUrl.query.title].Meeting.MeetingId,
         }).promise();
         respond(response, 200, 'application/json', JSON.stringify({}));
@@ -175,13 +175,13 @@ function serve(host = '127.0.0.1:8080') {
           }));
         }
 
-        await chimeMeetingsWrapper.startMeetingTranscription(useGlobalEndpoint, {
+        await chimeMeetings.startMeetingTranscription({
           MeetingId: meetingTable[requestUrl.query.title].Meeting.MeetingId,
           TranscriptionConfiguration: transcriptionConfiguration
         }).promise();
         respond(response, 200, 'application/json', JSON.stringify({}));
       } else if (request.method === 'POST' && requestUrl.pathname === '/stop_transcription') {
-        await chimeMeetingsWrapper.stopMeetingTranscription(useGlobalEndpoint, {
+        await chimeMeetings.stopMeetingTranscription({
           MeetingId: meetingTable[requestUrl.query.title].Meeting.MeetingId
         }).promise();
         respond(response, 200, 'application/json', JSON.stringify({}));

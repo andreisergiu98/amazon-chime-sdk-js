@@ -6,5 +6,5 @@
   },
   "include": [
     "./app/**/*"
-, "ChimeMeetingsWrapper.js"  ]
+, "ChimeMeetings.js"  ]
 }

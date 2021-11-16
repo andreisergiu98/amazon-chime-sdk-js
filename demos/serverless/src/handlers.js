@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-const ChimeMeetingsWrapper = require('./ChimeMeetingsWrapper.js');
+const ChimeMeetings = require('./ChimeMeetings.js');
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
@@ -15,9 +15,9 @@ const ddb = new AWS.DynamoDB();
 // the meeting is hosted in.
 const currentRegion = 'us-east-1';
 
-//Set useGlobalEndpoint to true to use global endpoint
+//Set useChimeGlobal to true to use global endpoint
 //Setting it false will use regional Chime Meetings Endpoints based upon region.
-let useGlobalEndpoint = true;
+let useChimeGlobal = true;
 
 // Set the AWS SDK Chime endpoint. The global endpoint is https://service.chime.aws.amazon.com.
 const endpoint = process.env.CHIME_ENDPOINT;
@@ -48,8 +48,8 @@ exports.join = async (event, context) => {
     return response(400, 'application/json', JSON.stringify({ error: 'Need parameters: title, name, region' }));
   }
 
-  useGlobalEndpoint = (!!query.controlRegion);
-  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, query.controlRegion, endpoint);
+  useChimeGlobal = (!!query.controlRegion);
+  let chimeMeetings = new ChimeMeetings(currentRegion, query.controlRegion, endpoint, useChimeGlobal);
 
   // Look up the meeting by its title. If it does not exist, create the meeting.
   let meeting = await getMeeting(query.title);
@@ -72,7 +72,7 @@ exports.join = async (event, context) => {
 
     };
 
-    if (useGlobalEndpoint) {
+    if (useChimeGlobal) {
       request = {
         ...request,
         // Tags associated with the meeting. They can be used in cost allocation console
@@ -83,7 +83,7 @@ exports.join = async (event, context) => {
       }
     }
 
-    meeting = await chimeMeetings.createMeeting(useGlobalEndpoint, request).promise();
+    meeting = await chimeMeetings.createMeeting(request).promise();
 
     // Store the meeting in the table using the meeting title as the key.
     await putMeeting(query.title, meeting);
@@ -91,7 +91,7 @@ exports.join = async (event, context) => {
 
   // Create new attendee for the meeting
   console.info('Adding new attendee');
-  const attendee = (await chimeMeetings.createAttendee(useGlobalEndpoint, {
+  const attendee = (await chimeMeetings.createAttendee({
     // The meeting ID of the created meeting to add the attendee to
     MeetingId: meeting.Meeting.MeetingId,
 
@@ -116,11 +116,11 @@ exports.end = async (event, context) => {
   // Fetch the meeting by title
   const meeting = await getMeeting(event.queryStringParameters.title);
 
-  useGlobalEndpoint = (!!event.queryStringParameters.controlRegion);
-  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
+  useChimeGlobal = (!!event.queryStringParameters.controlRegion);
+  let chimeMeetings = new ChimeMeetings(currentRegion, event.queryStringParameters.controlRegion, endpoint, useChimeGlobal);
 
   // End the meeting. All attendee connections will hang up.
-  await chimeMeetings.deleteMeeting(useGlobalEndpoint, { MeetingId: meeting.Meeting.MeetingId }).promise();
+  await chimeMeetings.deleteMeeting({ MeetingId: meeting.Meeting.MeetingId }).promise();
   return response(200, 'application/json', JSON.stringify({}));
 };
 
@@ -156,10 +156,10 @@ exports.start_transcription = async (event, context) => {
     }));
   }
 
-  useGlobalEndpoint = (!!event.queryStringParameters.controlRegion);
-  chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
+  useChimeGlobal = (!!event.queryStringParameters.controlRegion);
+  chimeMeetings = new ChimeMeetings(currentRegion, event.queryStringParameters.controlRegion, endpoint, useChimeGlobal);
   // start transcription for the meeting
-  await chimeMeetings.startMeetingTranscription(useGlobalEndpoint,{
+  await chimeMeetings.startMeetingTranscription({
     MeetingId: meeting.Meeting.MeetingId,
     TranscriptionConfiguration: transcriptionConfiguration
   }).promise();
@@ -170,11 +170,11 @@ exports.stop_transcription = async (event, context) => {
   // Fetch the meeting by title
   const meeting = await getMeeting(event.queryStringParameters.title);
 
-  useGlobalEndpoint = (!!event.queryStringParameters.controlRegion);
-  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
+  useChimeGlobal = (!!event.queryStringParameters.controlRegion);
+  let chimeMeetings = new ChimeMeetings(currentRegion, event.queryStringParameters.controlRegion, endpoint, useChimeGlobal);
 
   // stop transcription for the meeting
-  await chimeMeetings.stopMeetingTranscription(useGlobalEndpoint,{
+  await chimeMeetings.stopMeetingTranscription({
     MeetingId: meeting.Meeting.MeetingId
   }).promise();
   return response(200, 'application/json', JSON.stringify({}));
@@ -185,7 +185,7 @@ exports.start_capture = async (event, context) => {
   const meeting = await getMeeting(event.queryStringParameters.title);
   meetingRegion = meeting.Meeting.MediaRegion;
 
-  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
+  let chimeMeetings = new ChimeMeetings(currentRegion, event.queryStringParameters.controlRegion, endpoint, useChimeGlobal);
   let captureS3Destination = `arn:aws:s3:::${CAPTURE_S3_DESTINATION_PREFIX}-${meetingRegion}/${meeting.Meeting.MeetingId}/`
   pipelineInfo = await chimeMeetings.createMediaCapturePipeline({
     SourceType: "ChimeSdkMeeting",
@@ -200,7 +200,7 @@ exports.start_capture = async (event, context) => {
 
 exports.end_capture = async (event, context) => {
   // Fetch the capture info by title
-  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
+  let chimeMeetings = new ChimeMeetings(currentRegion, event.queryStringParameters.controlRegion, endpoint, useChimeGlobal);
   const pipelineInfo = await getCapturePipeline(event.queryStringParameters.title);
   if (pipelineInfo) {
     await chimeMeetings.deleteMediaCapturePipeline({
