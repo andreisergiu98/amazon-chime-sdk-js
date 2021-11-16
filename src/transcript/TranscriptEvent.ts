@@ -124,21 +124,9 @@ export class TranscriptEventConverter {
                 category: entity.category,
                 confidence: entity.confidence,
                 content: entity.content,
-                startTimeMs: null,
-                endTimeMs: null,
+                startTimeMs: entity.startTime as number,
+                endTimeMs: entity.endTime as number,
               };
-
-              if (typeof entity.startTime === 'number') {
-                transcriptEntity.startTimeMs = entity.startTime;
-              } else {
-                transcriptEntity.startTimeMs = entity.startTime.toNumber();
-              }
-
-              if (typeof entity.endTime === 'number') {
-                transcriptEntity.endTimeMs = entity.endTime;
-              } else {
-                transcriptEntity.endTimeMs = entity.endTime.toNumber();
-              }
 
               if (entity.type) {
                 transcriptEntity.type = entity.type;

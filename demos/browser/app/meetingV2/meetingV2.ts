@@ -242,7 +242,7 @@ interface TranscriptionStreamParams {
   contentIdentificationType?: 'PII' | 'PHI';
   contentRedactionType?: 'PII';
   enablePartialResultsStability?: boolean;
-  partialStabilityFactor?: string;
+  partialResultsStability?: string;
   entityType?: string;
   languageModel?: string;
 }
@@ -1035,7 +1035,7 @@ export class DemoMeetingApp
       let engine = '';
       let languageCode = '';
       let region = '';
-      const transcriptionStreamParams:TranscriptionStreamParams = {};
+      const transcriptionStreamParams: TranscriptionStreamParams = {};
       if ((document.getElementById('engine-transcribe') as HTMLInputElement).checked) {
         engine = 'transcribe';
         languageCode = (document.getElementById('transcribe-language') as HTMLInputElement).value;
@@ -1053,9 +1053,9 @@ export class DemoMeetingApp
           transcriptionStreamParams.enablePartialResultsStability = true;
         }
         
-        let partialStabilityFactor = (document.getElementById('partial-stability') as HTMLInputElement).value;
-        if (partialStabilityFactor) {
-          transcriptionStreamParams.partialStabilityFactor = partialStabilityFactor;
+        let partialResultsStability = (document.getElementById('partial-stability') as HTMLInputElement).value;
+        if (partialResultsStability) {
+          transcriptionStreamParams.partialResultsStability = partialResultsStability;
         }
         if (isChecked('content-identification-checkbox') || isChecked('content-redaction-checkbox')) {
           const selected = document.querySelectorAll('#transcribe-entity option:checked');
@@ -1091,7 +1091,7 @@ export class DemoMeetingApp
       return (document.getElementById(id) as HTMLInputElement).checked;
     }
 
-    const startLiveTranscription = async (engine: string, languageCode: string, region: string, transcriptionStreamParams : TranscriptionStreamParams) => {
+    const startLiveTranscription = async (engine: string, languageCode: string, region: string, transcriptionStreamParams: TranscriptionStreamParams) => {
       const transcriptionAdditionalParams = JSON.stringify(transcriptionStreamParams);
       const response = await fetch(`${DemoMeetingApp.BASE_URL}start_transcription?title=${encodeURIComponent(this.meeting)}&engine=${encodeURIComponent(engine)}&language=${encodeURIComponent(languageCode)}&region=${encodeURIComponent(region)}&transcriptionStreamParams=${encodeURIComponent(transcriptionAdditionalParams)}`, {
         method: 'POST',
@@ -2004,7 +2004,10 @@ export class DemoMeetingApp
           this.appendNewSpeakerTranscriptDiv(segment, speakerToTranscriptSpanMap);
         } else {
           const transcriptSpan = speakerToTranscriptSpanMap.get(newSpeakerId);
-          transcriptSpan.innerText = transcriptSpan.innerText + '\u00a0';
+          const spaceSpan = document.createElement('span') as HTMLSpanElement;
+          spaceSpan.classList.add('transcript-content');
+          spaceSpan.innerText = '\u00a0';
+          transcriptSpan.appendChild(spaceSpan);
           transcriptSpan.appendChild(segment.contentSpan);
         }
       }
@@ -2048,7 +2051,10 @@ export class DemoMeetingApp
         if (this.noWordSeparatorForTranscription) {
           contentSpan.appendChild(itemContentSpan);
         } else {
-          itemContentSpan.innerText = ' ' + itemContentSpan.innerText
+          const spaceSpan = document.createElement('span') as HTMLSpanElement;
+          spaceSpan.classList.add('transcript-content');
+          spaceSpan.innerText = '\u00a0';
+          contentSpan.appendChild(spaceSpan);
           contentSpan.appendChild(itemContentSpan);
         }
       }

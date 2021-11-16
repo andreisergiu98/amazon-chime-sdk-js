@@ -166,8 +166,8 @@ function serve(host = '127.0.0.1:8080') {
           if (transcriptionStreamParams.hasOwnProperty('enablePartialResultsStability')) {
             transcriptionConfiguration.EngineTranscribeSettings.EnablePartialResultsStabilization = transcriptionStreamParams.enablePartialResultsStability;
           }
-          if (transcriptionStreamParams.hasOwnProperty('partialStabilityFactor')) {
-            transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptionStreamParams.partialStabilityFactor;
+          if (transcriptionStreamParams.hasOwnProperty('partialResultsStability')) {
+            transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptionStreamParams.partialResultsStability;
           }
           if (transcriptionStreamParams.hasOwnProperty('entityType')) {
             transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptionStreamParams.entityType;

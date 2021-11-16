@@ -130,8 +130,8 @@ exports.start_transcription = async (event, context) => {
     if (transcriptionStreamParams.hasOwnProperty('enablePartialResultsStability')) {
       transcriptionConfiguration.EngineTranscribeSettings.EnablePartialResultsStabilization = transcriptionStreamParams.enablePartialResultsStability;
     }
-    if (transcriptionStreamParams.hasOwnProperty('partialStabilityFactor')) {
-      transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptionStreamParams.partialStabilityFactor;
+    if (transcriptionStreamParams.hasOwnProperty('partialResultsStability')) {
+      transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptionStreamParams.partialResultsStability;
     }
     if (transcriptionStreamParams.hasOwnProperty('entityType')) {
       transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptionStreamParams.entityType;
