@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+const ChimeMeetingsWrapper = require('./ChimeMeetingsWrapper.js');
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
@@ -13,11 +14,13 @@ const ddb = new AWS.DynamoDB();
 // Use the MediaRegion property below in CreateMeeting to select the region
 // the meeting is hosted in.
 const currentRegion = 'us-east-1';
-const chime = new AWS.Chime({ region: currentRegion});
-let chimeMeetings = null;
+
+//Set useGlobalEndpoint to true to use global endpoint
+//Setting it false will use regional Chime Meetings Endpoints based upon region.
+let useGlobalEndpoint = true;
 
 // Set the AWS SDK Chime endpoint. The global endpoint is https://service.chime.aws.amazon.com.
-chime.endpoint = new AWS.Endpoint(process.env.CHIME_ENDPOINT);
+const endpoint = process.env.CHIME_ENDPOINT;
 
 // Read resource names from the environment
 const {
@@ -35,24 +38,23 @@ const {
 
 exports.index = async (event, context, callback) => {
   // Return the contents of the index page
-  return response(200, 'text/html', fs.readFileSync('./index.html', {encoding: 'utf8'}));
+  return response(200, 'text/html', fs.readFileSync('./index.html', { encoding: 'utf8' }));
 };
 
-exports.join = async(event, context) => {
+exports.join = async (event, context) => {
   const query = event.queryStringParameters;
 
   if (!query.title || !query.name || !query.region) {
-    return response(400, 'application/json', JSON.stringify({error: 'Need parameters: title, name, region'}));
+    return response(400, 'application/json', JSON.stringify({ error: 'Need parameters: title, name, region' }));
   }
 
-  let controlRegion = (!!query.controlRegion) ? currentRegion : query.controlRegion;
-  chimeMeetings = new AWS.ChimeSDKMeetings({ region: controlRegion});
-    
-  
+  useGlobalEndpoint = (!!query.controlRegion);
+  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, query.controlRegion, endpoint);
+
   // Look up the meeting by its title. If it does not exist, create the meeting.
   let meeting = await getMeeting(query.title);
   if (!meeting) {
-    const request = {
+    let request = {
       // Use a UUID for the client request token to ensure that any request retries
       // do not create multiple meetings.
       ClientRequestToken: uuidv4(),
@@ -68,13 +70,20 @@ exports.join = async(event, context) => {
       // For simplicity here, we use the meeting title.
       ExternalMeetingId: query.title.substring(0, 64),
 
-      // Tags associated with the meeting. They can be used in cost allocation console
-      // Tags: [
-      //   { Key: 'Department', Value: 'RND'}
-      // ]
     };
-    console.info('Creating new meeting: ' + JSON.stringify(request));
-    meeting = await chimeMeetings.createMeeting(request).promise();
+
+    if (useGlobalEndpoint) {
+      request = {
+        ...request,
+        // Tags associated with the meeting. They can be used in cost allocation console
+        //Tags are not supported by new ChimeMeetingsSDK
+        Tags: [
+          { Key: 'Department', Value: 'RND' }
+        ]
+      }
+    }
+
+    meeting = await chimeMeetings.createMeeting(useGlobalEndpoint, request).promise();
 
     // Store the meeting in the table using the meeting title as the key.
     await putMeeting(query.title, meeting);
@@ -82,7 +91,7 @@ exports.join = async(event, context) => {
 
   // Create new attendee for the meeting
   console.info('Adding new attendee');
-  const attendee = (await chimeMeetings.createAttendee({
+  const attendee = (await chimeMeetings.createAttendee(useGlobalEndpoint, {
     // The meeting ID of the created meeting to add the attendee to
     MeetingId: meeting.Meeting.MeetingId,
 
@@ -107,8 +116,11 @@ exports.end = async (event, context) => {
   // Fetch the meeting by title
   const meeting = await getMeeting(event.queryStringParameters.title);
 
+  useGlobalEndpoint = (!!event.queryStringParameters.controlRegion);
+  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
+
   // End the meeting. All attendee connections will hang up.
-  await chimeMeetings.deleteMeeting({ MeetingId: meeting.Meeting.MeetingId }).promise();
+  await chimeMeetings.deleteMeeting(useGlobalEndpoint, { MeetingId: meeting.Meeting.MeetingId }).promise();
   return response(200, 'application/json', JSON.stringify({}));
 };
 
@@ -144,8 +156,10 @@ exports.start_transcription = async (event, context) => {
     }));
   }
 
+  useGlobalEndpoint = (!!event.queryStringParameters.controlRegion);
+  chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
   // start transcription for the meeting
-  await chimeMeetings.startMeetingTranscription({
+  await chimeMeetings.startMeetingTranscription(useGlobalEndpoint,{
     MeetingId: meeting.Meeting.MeetingId,
     TranscriptionConfiguration: transcriptionConfiguration
   }).promise();
@@ -156,8 +170,11 @@ exports.stop_transcription = async (event, context) => {
   // Fetch the meeting by title
   const meeting = await getMeeting(event.queryStringParameters.title);
 
+  useGlobalEndpoint = (!!event.queryStringParameters.controlRegion);
+  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
+
   // stop transcription for the meeting
-  await chimeMeetings.stopMeetingTranscription({
+  await chimeMeetings.stopMeetingTranscription(useGlobalEndpoint,{
     MeetingId: meeting.Meeting.MeetingId
   }).promise();
   return response(200, 'application/json', JSON.stringify({}));
@@ -168,8 +185,9 @@ exports.start_capture = async (event, context) => {
   const meeting = await getMeeting(event.queryStringParameters.title);
   meetingRegion = meeting.Meeting.MediaRegion;
 
+  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
   let captureS3Destination = `arn:aws:s3:::${CAPTURE_S3_DESTINATION_PREFIX}-${meetingRegion}/${meeting.Meeting.MeetingId}/`
-  pipelineInfo = await chime.createMediaCapturePipeline({
+  pipelineInfo = await chimeMeetings.createMediaCapturePipeline({
     SourceType: "ChimeSdkMeeting",
     SourceArn: `arn:aws:chime::${AWS_ACCOUNT_ID}:meeting:${meeting.Meeting.MeetingId}`,
     SinkType: "S3Bucket",
@@ -182,19 +200,20 @@ exports.start_capture = async (event, context) => {
 
 exports.end_capture = async (event, context) => {
   // Fetch the capture info by title
+  let chimeMeetings = new ChimeMeetingsWrapper(currentRegion, event.queryStringParameters.controlRegion, endpoint);
   const pipelineInfo = await getCapturePipeline(event.queryStringParameters.title);
   if (pipelineInfo) {
-    await chime.deleteMediaCapturePipeline({
+    await chimeMeetings.deleteMediaCapturePipeline({
       MediaPipelineId: pipelineInfo.MediaCapturePipeline.MediaPipelineId
     }).promise();
     return response(200, 'application/json', JSON.stringify({}));
   } else {
-    return response(500, 'application/json', JSON.stringify({msg: "No pipeline to stop for this meeting"}))
+    return response(500, 'application/json', JSON.stringify({ msg: "No pipeline to stop for this meeting" }))
   }
 };
 
 exports.audio_file = async (event, context) => {
-  return response(200, 'audio/mpeg', fs.readFileSync('./speech.mp3', {encoding: 'base64'}), true);
+  return response(200, 'audio/mpeg', fs.readFileSync('./speech.mp3', { encoding: 'base64' }), true);
 };
 
 exports.fetch_credentials = async (event, context) => {
@@ -408,7 +427,7 @@ function createLogStreamName(meetingId, attendeeId) {
   return `ChimeSDKMeeting_${meetingId}_${attendeeId}`;
 }
 
-function response(statusCode, contentType, body, isBase64Encoded=false) {
+function response(statusCode, contentType, body, isBase64Encoded = false) {
   return {
     statusCode: statusCode,
     headers: { 'Content-Type': contentType },
@@ -430,7 +449,7 @@ function addSignalMetricsToCloudWatch(logMsg, meetingId, attendeeId) {
     const metricName = metricList[metricIndex];
     if (logMsgJson.attributes.hasOwnProperty(metricName)) {
       const metricValue = logMsgJson.attributes[metricName];
-      console.log('Logging metric -> ', metricName, ': ', metricValue );
+      console.log('Logging metric -> ', metricName, ': ', metricValue);
       putMetric(metricName, metricValue, meetingId, attendeeId);
     }
   }
