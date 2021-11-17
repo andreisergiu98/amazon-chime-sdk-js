@@ -1063,7 +1063,6 @@ export class DemoMeetingApp
           if (selected.length > 0) {
             values = Array.from(selected).filter(node => (node as HTMLInputElement).value !== '').map(el => (el as HTMLInputElement).value).join(',');
           } 
-          console.log("output", values);
           if (values !== '') {
             transcriptionStreamParams.piiEntityTypes = values;
           }
