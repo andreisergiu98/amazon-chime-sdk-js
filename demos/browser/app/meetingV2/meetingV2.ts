@@ -2005,7 +2005,7 @@ export class DemoMeetingApp
           this.appendNewSpeakerTranscriptDiv(segment, speakerToTranscriptSpanMap);
         } else {
           const transcriptSpan = speakerToTranscriptSpanMap.get(newSpeakerId);
-          transcriptSpan.appendChild(this.createEmptySpan());
+          transcriptSpan.appendChild(this.createSpaceSpan());
           transcriptSpan.appendChild(segment.contentSpan);
         }
       }
@@ -2050,7 +2050,7 @@ export class DemoMeetingApp
         if (this.noWordSeparatorForTranscription) {
           contentSpan.appendChild(itemContentSpan);
         } else {
-          contentSpan.appendChild(this.createEmptySpan());
+          contentSpan.appendChild(this.createSpaceSpan());
           contentSpan.appendChild(itemContentSpan);
         }
       }
@@ -2067,7 +2067,7 @@ export class DemoMeetingApp
     }
   };
 
-  createEmptySpan(): HTMLSpanElement {
+  createSpaceSpan(): HTMLSpanElement {
     const spaceSpan = document.createElement('span') as HTMLSpanElement;
     spaceSpan.classList.add('transcript-content');
     spaceSpan.innerText = '\u00a0';

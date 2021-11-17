@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 
-- Adds support for new features including PII Content Identification and Redaction, Partial Results Stabilization, and Custom Language Models for Amazon Transcribe and PHI Content Identification for Amazon Transcribe Medical.
+- Adds support to live transcription for new features including PII content identification and redaction, partial results stabilization, and custom language models for Amazon Transcribe and PHI content identification for Amazon Transcribe Medical.
+
 ### Removed
 
 ### Fixed
