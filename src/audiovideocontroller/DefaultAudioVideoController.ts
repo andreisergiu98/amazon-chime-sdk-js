@@ -206,6 +206,24 @@ export default class DefaultAudioVideoController
     return this._mediaStreamBroker;
   }
 
+  // Return TRUE if we're currently attempting to connect.
+  // Used to help prevent race conditions that can occur when MonitorTasks triggers
+  // resubscriptions for remote videos while we're still connecting in the first place.
+  get isConnecting(): boolean {
+    // the sessionStateController keeps track of what we're in the process of doing
+    // Use it to check if we're connecting.
+    return this.sessionStateController.state() === SessionStateControllerState.Connecting;
+  }
+
+  // Return TRUE if we're currently updating (state transition)
+  // Used to help prevent race conditions that can occur when MonitorTasks triggers
+  // resubscriptions for remote videos while we're acting on other updates.
+  get isUpdating(): boolean {
+    // the sessionStateController keeps track of what we're in the process of doing
+    // Use it to check if we're connecting.
+    return this.sessionStateController.state() === SessionStateControllerState.Updating;
+  }
+
   getRTCPeerConnectionStats(selector?: MediaStreamTrack): Promise<RTCStatsReport> {
     if (!this.rtcPeerConnection) {
       return null;

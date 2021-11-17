@@ -120,4 +120,13 @@ export default interface AudioVideoController extends AudioVideoControllerFacade
    * Returns the [[EventController]] for this audio-video controller.
    */
   readonly eventController?: EventController;
+
+  /**
+   * Return TRUE if we're currently attempting to connect, and are not yet connected.
+   */
+  readonly isConnecting?: boolean;
+  /**
+   * Return TRUE if we're currently updating the state for whatever reason. ie; in the 'Updating' transition
+   */
+  readonly isUpdating?: boolean;
 }

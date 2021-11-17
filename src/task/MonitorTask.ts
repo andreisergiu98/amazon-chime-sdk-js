@@ -144,6 +144,18 @@ export default class MonitorTask
   }
 
   private checkResubscribe(clientMetricReport: ClientMetricReport): boolean {
+    if (
+      this.context.audioVideoController.isConnecting ||
+      this.context.audioVideoController.isUpdating
+    ) {
+      // Avoid accidentally updating the state in the middle of subscribing
+      // to streams in the first place during initial connection.
+      this.logger.info('Deferring resubscribe checks while connecting');
+      return false;
+    } else {
+      this.logger.info('checking resubscribe');
+    }
+
     const metricReport = clientMetricReport.getObservableMetrics();
     if (!metricReport) {
       return false;

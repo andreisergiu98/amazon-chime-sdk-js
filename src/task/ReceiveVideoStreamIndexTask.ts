@@ -53,6 +53,17 @@ export default class ReceiveVideoStreamIndexTask
     // @ts-ignore: force cast to SdkIndexFrame
     const indexFrame: SdkIndexFrame = event.message.index;
     this.context.logger.info(`received new index ${JSON.stringify(indexFrame)}`);
+
+    // Hold on, are we in the middle on connecting? In that case, there's a potential
+    // race with processing our original index with this update. Save this index for
+    // later AFTER we've finished connecting.
+    if (this.context.audioVideoController.isConnecting) {
+      this.context.logger.info(
+        'Connecting state detected. Ignoring new index till connection finished.'
+      );
+      return;
+    }
+
     this.handleIndexFrame(indexFrame);
   }
 
