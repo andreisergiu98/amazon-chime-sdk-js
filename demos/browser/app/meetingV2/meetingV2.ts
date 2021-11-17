@@ -1070,9 +1070,9 @@ export class DemoMeetingApp
 
         if (isChecked('custom-language-model-checkbox')) {
           let languageModelName = (document.getElementById('language-model-input-text') as HTMLInputElement).value;
-            if (languageModelName) {
-              transcriptionStreamParams.languageModelName = languageModelName;
-            }
+          if (languageModelName) {
+            transcriptionStreamParams.languageModelName = languageModelName;
+          }
         }
       } else if ((document.getElementById('engine-transcribe-medical') as HTMLInputElement).checked) {
         engine = 'transcribe_medical';
