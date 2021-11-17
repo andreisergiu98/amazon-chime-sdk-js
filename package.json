@@ -14,6 +14,10 @@
     "node": "^12 || ^14 || ^15 || ^16",
     "npm": "^6 || ^7 || ^8"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "clean": "rimraf .nyc_output build node_modules",
     "copy": "node script/copy-protocol.js",
