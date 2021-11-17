@@ -133,11 +133,11 @@ exports.start_transcription = async (event, context) => {
     if (transcriptionStreamParams.hasOwnProperty('partialResultsStability')) {
       transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptionStreamParams.partialResultsStability;
     }
-    if (transcriptionStreamParams.hasOwnProperty('entityType')) {
-      transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptionStreamParams.entityType;
+    if (transcriptionStreamParams.hasOwnProperty('piiEntityTypes')) {
+      transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptionStreamParams.piiEntityTypes;
     }
-    if (transcriptionStreamParams.hasOwnProperty('languageModel')) {
-      transcriptionConfiguration.EngineTranscribeSettings.LanguageModelName = transcriptionStreamParams.languageModel;
+    if (transcriptionStreamParams.hasOwnProperty('languageModelName')) {
+      transcriptionConfiguration.EngineTranscribeSettings.LanguageModelName = transcriptionStreamParams.languageModelName;
     }
   } else if (event.queryStringParameters.engine === 'transcribe_medical') {
     transcriptionConfiguration = {

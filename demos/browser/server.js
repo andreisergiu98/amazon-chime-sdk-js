@@ -147,7 +147,7 @@ function serve(host = '127.0.0.1:8080') {
         let transcriptionConfiguration = {};
         const transcriptionStreamParams = JSON.parse(requestUrl.query.transcriptionStreamParams);
         const contentIdentification = requestUrl.query.contentIdentification;
-        const entityType = requestUrl.query.entityType;
+        const piiEntityTypes = requestUrl.query.piiEntityTypes;
         if (requestUrl.query.engine === 'transcribe') {
           transcriptionConfiguration = {
             EngineTranscribeSettings: {
@@ -169,11 +169,11 @@ function serve(host = '127.0.0.1:8080') {
           if (transcriptionStreamParams.hasOwnProperty('partialResultsStability')) {
             transcriptionConfiguration.EngineTranscribeSettings.PartialResultsStability = transcriptionStreamParams.partialResultsStability;
           }
-          if (transcriptionStreamParams.hasOwnProperty('entityType')) {
-            transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptionStreamParams.entityType;
+          if (transcriptionStreamParams.hasOwnProperty('piiEntityTypes')) {
+            transcriptionConfiguration.EngineTranscribeSettings.PiiEntityTypes = transcriptionStreamParams.piiEntityTypes;
           }
-          if (transcriptionStreamParams.hasOwnProperty('languageModel')) {
-            transcriptionConfiguration.EngineTranscribeSettings.LanguageModelName = transcriptionStreamParams.languageModel;
+          if (transcriptionStreamParams.hasOwnProperty('languageModelName')) {
+            transcriptionConfiguration.EngineTranscribeSettings.LanguageModelName = transcriptionStreamParams.languageModelName;
           }
         } else if (requestUrl.query.engine === 'transcribe_medical') {
           transcriptionConfiguration = {

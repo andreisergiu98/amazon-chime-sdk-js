@@ -243,8 +243,8 @@ interface TranscriptionStreamParams {
   contentRedactionType?: 'PII';
   enablePartialResultsStability?: boolean;
   partialResultsStability?: string;
-  entityType?: string;
-  languageModel?: string;
+  piiEntityTypes?: string;
+  languageModelName?: string;
 }
 
 export class DemoMeetingApp
@@ -1063,15 +1063,16 @@ export class DemoMeetingApp
           if (selected.length > 0) {
             values = Array.from(selected).filter(node => (node as HTMLInputElement).value !== '').map(el => (el as HTMLInputElement).value).join(',');
           } 
+          console.log("output", values);
           if (values !== '') {
-            transcriptionStreamParams.entityType = values;
+            transcriptionStreamParams.piiEntityTypes = values;
           }
         }
 
         if (isChecked('custom-language-model-checkbox')) {
-          let languageModel = (document.getElementById('language-model-input-text') as HTMLInputElement).value;
-            if (languageModel) {
-              transcriptionStreamParams.languageModel = languageModel;
+          let languageModelName = (document.getElementById('language-model-input-text') as HTMLInputElement).value;
+            if (languageModelName) {
+              transcriptionStreamParams.languageModelName = languageModelName;
             }
         }
       } else if ((document.getElementById('engine-transcribe-medical') as HTMLInputElement).checked) {
@@ -2004,10 +2005,7 @@ export class DemoMeetingApp
           this.appendNewSpeakerTranscriptDiv(segment, speakerToTranscriptSpanMap);
         } else {
           const transcriptSpan = speakerToTranscriptSpanMap.get(newSpeakerId);
-          const spaceSpan = document.createElement('span') as HTMLSpanElement;
-          spaceSpan.classList.add('transcript-content');
-          spaceSpan.innerText = '\u00a0';
-          transcriptSpan.appendChild(spaceSpan);
+          transcriptSpan.appendChild(this.createEmptySpan());
           transcriptSpan.appendChild(segment.contentSpan);
         }
       }
@@ -2023,6 +2021,7 @@ export class DemoMeetingApp
       itemContentSpan.innerText = item.content;
       itemContentSpan.classList.add('transcript-content');
       // underline the word with red to show confidence level of predicted word being less than 0.3
+      // for redaction, words are represented as '[Name]' and has a confidence of 0. Redacted words are only shown with highlighting.
       if (item.hasOwnProperty('confidence') && !item.content.startsWith("[") && item.confidence < 0.3) {
         itemContentSpan.classList.add('confidence-style');
       }
@@ -2040,7 +2039,7 @@ export class DemoMeetingApp
       } else if (item.type === TranscriptItemType.PUNCTUATION) {
         contentSpan.appendChild(itemContentSpan);
         segments.push({
-          contentSpan: contentSpan,
+          contentSpan,
           attendee: attendee,
           startTimeMs: startTimeMs,
           endTimeMs: item.endTimeMs
@@ -2051,10 +2050,7 @@ export class DemoMeetingApp
         if (this.noWordSeparatorForTranscription) {
           contentSpan.appendChild(itemContentSpan);
         } else {
-          const spaceSpan = document.createElement('span') as HTMLSpanElement;
-          spaceSpan.classList.add('transcript-content');
-          spaceSpan.innerText = '\u00a0';
-          contentSpan.appendChild(spaceSpan);
+          contentSpan.appendChild(this.createEmptySpan());
           contentSpan.appendChild(itemContentSpan);
         }
       }
@@ -2069,6 +2065,13 @@ export class DemoMeetingApp
         endTimeMs: result.endTimeMs,
       });
     }
+  };
+
+  createEmptySpan(): HTMLSpanElement {
+    const spaceSpan = document.createElement('span') as HTMLSpanElement;
+    spaceSpan.classList.add('transcript-content');
+    spaceSpan.innerText = '\u00a0';
+    return spaceSpan;
   };
 
   appendNewSpeakerTranscriptDiv = (
